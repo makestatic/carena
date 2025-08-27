@@ -1,0 +1,90 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - "*"
+
+permissions:
+  contents: write
+
+env:
+  ZIG_VERSION: 0.15.1
+  BUILD_DIR: build
+  OUT_DIR: zig-out
+  INCLUDE_DIR: zig-out/include
+  INCLUDE_FILES: "LICENSE README.md"
+
+jobs:
+  build_and_release:
+    name: Build and Create Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: ${{ env.ZIG_VERSION }}
+
+      - name: Build all targets
+        run: zig build
+
+      - name: Package all targets
+        run: |
+          mkdir -p "${{ env.BUILD_DIR }}"
+          repo_name="${GITHUB_REPOSITORY#*/}"
+
+          for dir in "${{ env.OUT_DIR }}"/*; do
+            if [ -d "$dir" ]; then
+              base_name=$(basename "$dir")
+
+              # detect binaries/libraries dynamically
+              artifacts=$(find "$dir" -maxdepth 1 -type f \
+                \( -perm -111 -o -name "*.so" -o -name "*.dylib" -o -name "*.dll" -o -name "*.a" \))
+
+              if [ -z "$artifacts" ]; then
+                echo "Skipping $dir: no artifacts found"
+                continue
+              fi
+
+              archive_name="${{ env.BUILD_DIR }}/${repo_name}-${base_name}.tar.gz"
+              temp_dir="$(mktemp -d)"
+              folder_name="${repo_name}-${base_name}"
+
+              mkdir -p "$temp_dir/$folder_name"
+
+              # copy binaries/libs
+              for file in $artifacts; do
+                cp "$file" "$temp_dir/$folder_name/"
+              done
+
+              # copy headers if present
+              if [ -d "${{ env.INCLUDE_DIR }}" ]; then
+                cp -r "${{ env.INCLUDE_DIR }}" "$temp_dir/$folder_name/"
+              fi
+
+              # copy extra docs
+              for f in ${{ env.INCLUDE_FILES }}; do
+                [ -f "$f" ] && cp "$f" "$temp_dir/$folder_name/"
+              done
+
+              tar -czf "$archive_name" -C "$temp_dir" "$folder_name"
+              echo "Created archive: $archive_name"
+
+              rm -rf "$temp_dir"
+            fi
+          done
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG_NAME" \
+            --repo="$GITHUB_REPOSITORY" \
+            --title="${GITHUB_REPOSITORY#*/} ${TAG_NAME#v}" \
+            --generate-notes \
+            ${{ env.BUILD_DIR }}/*.tar.gz || echo "No archives to upload"
