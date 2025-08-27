@@ -1,14 +1,17 @@
-# Arena Allocator for C
+# Arena Allocator in C
 
-A fast, self-contained memory allocator. Implements a dynamic arena with an internal custom memory system.
+A fast, lightweight, self-contained, and easy to integrate arena memory allocator.
 
 ## Features
 - Dynamic memory blocks
 - Bump-pointer allocation
-- Reset without freeing
-- Full release with one call so no more "damn, i forgot to free"
+- Reset the arena without freeing each allocation
+- Full release with one call — no more “damn, I forgot to free”
 - Shared library support
-- Unix platforms
+
+
+**Supported platforms:** _Unix-based systems only for now_.
+
 
 ## API
 
@@ -22,21 +25,24 @@ void  arena_reset(arena_t* arena);
 void  arena_free(arena_t* arena);
 ```
 
-## Integration
+## Usage
 
-Download the [pre-built](https://github.com/makestatic/carena/releases) library for your platform.  
+### Downloading
+Download the prebuilt shared library for your platform from [GitHub Releases](https://github.com/makestatic/carena/releases).
 
-Example with [clang](https://clang.llvm.org/) (works with gcc or others):
+### Compiling
+Works with [clang](https://clang.llvm.org/), [gcc](https://gcc.gnu.org/), or any other C compiler:
+
 ```sh
-clang main.c \
-  -I./x86_64-linux-gnu/include \
-  -L./x86_64-linux-gnu -larenaallocator \
-  -Wl,-rpath=./x86_64-linux-gnu \
-  -o main
+clang \
+    -I./carena-aarch64-linux-gnu/include \
+    -L./carena-aarch64-linux-gnu \
+    -Wl,-rpath,'$ORIGIN/carena-aarch64-linux-gnu' \
+    -o main main.c -larenaallocator
 ```
 
 ## License
-[GPLv3 or later](LICENSE)
+[GPLv3](LICENSE)
 
 </br>
 <sub>This project is for learning purposes. Not intended for production use.</sub>
