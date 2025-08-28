@@ -28,7 +28,7 @@ void  arena_free(arena_t* arena);
 ## Usage
 
 ### Downloading
-Download the prebuilt shared library for your platform from [GitHub Releases](https://github.com/makestatic/carena/releases).
+Download the prebuilt shared library for your platform from [releases](https://github.com/makestatic/carena/releases).
 
 ### Compiling
 Works with [clang](https://clang.llvm.org/), [gcc](https://gcc.gnu.org/), or any other C compiler:
